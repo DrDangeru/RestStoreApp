@@ -1,0 +1,45 @@
+.specials-banner {
+  position: fixed;
+  font-style: italic;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(90deg, #ff4b2b 0%, #ff416c 100%);
+  color: rgb(255, 255, 255);
+  padding: 10px 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-weight: bold;
+  font-size: 1.2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.marquee-track {
+  display: flex;
+  width: fit-content;
+  animation: marquee-scroll 30s linear infinite;
+}
+
+.marquee {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.marquee span {
+  padding-right: 50px;
+  flex-shrink: 0;
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.specials-banner:hover .marquee-track {
+  animation-play-state: running;
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Pad Thai",
+    "price": 12.99,
+    "description": "Classic Thai stir-fried noodles",
+    "category": "eastern",
+    "detailedDescription": "Traditional Thai rice noodles stir-fried with eggs, tofu, bean sprouts, and peanuts in a tangy tamarind sauce."
+  },
+  {
+    "name": "Beef Burger",
+    "price": 14.99,
+    "description": "Juicy beef patty with all the fixings",
+    "category": "western",
+    "detailedDescription": "Premium Angus beef patty with lettuce, tomato, onion, pickles, and our special sauce on a brioche bun."
+  }
+]

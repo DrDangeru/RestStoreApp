@@ -1,0 +1,244 @@
+/* Page Layout */
+.category-page {
+  min-height: 100vh;
+  padding: 2rem;
+  padding-top: 70px;
+}
+
+.eastern-theme {
+  background: linear-gradient(to bottom, #ffecd2 0%, #fcb69f 100%);
+  color: #5a1a1a;
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 3rem;
+  padding: 1rem;
+}
+
+.category-title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin: 0;
+  color: #c92a2a;
+  text-shadow: 2px 2px 4px rgba(201, 42, 42, 0.2);
+  flex: 1;
+}
+
+.back-btn {
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  background: #ff6b6b;
+  color: white;
+}
+
+.back-btn:hover {
+  background: #ee5a52;
+  transform: translateX(5px);
+}
+
+.feedback-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.feedback-card {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  border-left: 5px solid #ff6b6b;
+}
+
+.feedback-icon {
+  font-size: 5rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.feedback-subtitle {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #c92a2a;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.feedback-description {
+  font-size: 1.1rem;
+  color: #666;
+  text-align: center;
+  margin-bottom: 2.5rem;
+  line-height: 1.6;
+}
+
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3561;
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+  padding: 1rem;
+  font-size: 1rem;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  outline: none;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.form-select {
+  cursor: pointer;
+  background-color: white;
+}
+
+.form-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Star Rating Styles */
+.star-rating {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  font-size: 2.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  opacity: 0.3;
+  filter: grayscale(100%);
+}
+
+.star-btn:hover,
+.star-btn.active {
+  opacity: 1;
+  filter: grayscale(0%);
+  transform: scale(1.2);
+}
+
+.rating-hint {
+  font-size: 0.9rem;
+  color: #999;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+.submit-feedback-btn {
+  padding: 1.2rem 2.5rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  margin-top: 1rem;
+  box-shadow: 0 5px 20px rgba(240, 147, 251, 0.3);
+}
+
+.submit-feedback-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(240, 147, 251, 0.4);
+}
+
+.submit-feedback-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submit-feedback-btn:active:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* Responsive Feedback Page */
+@media (max-width: 768px) {
+  .feedback-container {
+    padding: 1rem;
+  }
+  
+  .feedback-card {
+    padding: 2rem 1.5rem;
+  }
+  
+  .feedback-icon {
+    font-size: 4rem;
+  }
+  
+  .feedback-subtitle {
+    font-size: 1.5rem;
+  }
+  
+  .feedback-description {
+    font-size: 1rem;
+  }
+  
+  .star-btn {
+    font-size: 2rem;
+  }
+  
+  .form-label {
+    font-size: 1rem;
+  }
+  
+  .submit-feedback-btn {
+    font-size: 1.1rem;
+    padding: 1rem 2rem;
+  }
+}

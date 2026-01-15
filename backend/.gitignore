@@ -1,0 +1,5 @@
+.env
+*.db
+/restaurant-backend.exe
+logs/
+.envd.exe
