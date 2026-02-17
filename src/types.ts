@@ -25,6 +25,7 @@ export interface Product {
     };
     stockQuantity?: number;
     lowStockThreshold?: number;
+    orderedQuantity?: number;
 }
 
 export interface DailyStat {

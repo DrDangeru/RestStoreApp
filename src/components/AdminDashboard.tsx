@@ -70,7 +70,9 @@ function AdminDashboard({ onClose }: AdminDashboardProps) {
                 <th>Price</th>
                 <th>Stock</th>
                 <th>Threshold</th>
+                <th>On Order</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -78,21 +80,53 @@ function AdminDashboard({ onClose }: AdminDashboardProps) {
                 const isLowStock = item.stockQuantity !== undefined && 
                                  item.lowStockThreshold !== undefined && 
                                  item.stockQuantity <= item.lowStockThreshold;
+                const isInTransit = (item.orderedQuantity || 0) > 0;
                 
                 return (
-                  <tr key={item.id} style={{ backgroundColor: isLowStock ? '#fff5f5' : 'inherit' }}>
+                  <tr key={item.id} style={{ backgroundColor: isLowStock && !isInTransit ? '#fff5f5' : 'inherit' }}>
                     <td>{item.id}</td>
                     <td>{item.name}</td>
                     <td>{item.category}</td>
                     <td>${item.price.toFixed(2)}</td>
                     <td>{item.stockQuantity}</td>
                     <td>{item.lowStockThreshold}</td>
+                    <td>{item.orderedQuantity || '-'}</td>
                     <td>
-                      {isLowStock ? (
+                      {isInTransit ? (
+                         <span className={styles['in-transit']}>In Transit ({item.orderedQuantity})</span>
+                      ) : isLowStock ? (
                         <span style={{ color: '#dc3545', fontWeight: 'bold' }}>Low Stock</span>
                       ) : (
                         <span style={{ color: '#28a745' }}>OK</span>
                       )}
+                    </td>
+                    <td>
+                      <button 
+                        className={styles['order-btn']}
+                        onClick={() => {
+                          // Mock order functionality
+                          const orderQty = 50; // Default order quantity
+                          setStats(prev => {
+                            if (!prev) return null;
+                            return {
+                              ...prev,
+                              inventory: prev.inventory.map(p => 
+                                p.id === item.id 
+                                  ? { ...p, orderedQuantity: (p.orderedQuantity || 0) + orderQty }
+                                  : p
+                              ),
+                              lowStockItems: prev.lowStockItems.map(p =>
+                                p.id === item.id
+                                  ? { ...p, orderedQuantity: (p.orderedQuantity || 0) + orderQty }
+                                  : p
+                              )
+                            };
+                          });
+                          alert(`Ordered ${orderQty} units of ${item.name} from supplier.`);
+                        }}
+                      >
+                        Order Supplier
+                      </button>
                     </td>
                   </tr>
                 );
@@ -114,19 +148,58 @@ function AdminDashboard({ onClose }: AdminDashboardProps) {
                 <th>Product Name</th>
                 <th>Current Stock</th>
                 <th>Threshold</th>
+                <th>On Order</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {stats.lowStockItems.map(item => (
-                <tr key={item.id} className={styles['low-stock']}>
-                  <td>{item.id}</td>
-                  <td>{item.name}</td>
-                  <td>{item.stockQuantity}</td>
-                  <td>{item.lowStockThreshold}</td>
-                  <td>Low Stock</td>
-                </tr>
-              ))}
+              {stats.lowStockItems.map(item => {
+                const isInTransit = (item.orderedQuantity || 0) > 0;
+                return (
+                  <tr key={item.id} className={styles['low-stock']} style={{ backgroundColor: isInTransit ? '#fff' : undefined }}>
+                    <td>{item.id}</td>
+                    <td>{item.name}</td>
+                    <td>{item.stockQuantity}</td>
+                    <td>{item.lowStockThreshold}</td>
+                    <td>{item.orderedQuantity || '-'}</td>
+                    <td>
+                      {isInTransit ? (
+                        <span className={styles['in-transit']}>In Transit ({item.orderedQuantity})</span>
+                      ) : (
+                        <span>Low Stock</span>
+                      )}
+                    </td>
+                    <td>
+                      <button 
+                        className={styles['order-btn']}
+                        onClick={() => {
+                          const orderQty = 50;
+                          setStats(prev => {
+                            if (!prev) return null;
+                            return {
+                              ...prev,
+                              inventory: prev.inventory.map(p => 
+                                p.id === item.id 
+                                  ? { ...p, orderedQuantity: (p.orderedQuantity || 0) + orderQty }
+                                  : p
+                              ),
+                              lowStockItems: prev.lowStockItems.map(p =>
+                                p.id === item.id
+                                  ? { ...p, orderedQuantity: (p.orderedQuantity || 0) + orderQty }
+                                  : p
+                              )
+                            };
+                          });
+                          alert(`Ordered ${orderQty} units of ${item.name} from supplier.`);
+                        }}
+                      >
+                        Order Supplier
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         ) : (
