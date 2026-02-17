@@ -58,6 +58,8 @@ type Product struct {
 	ImageAttribution    *ImageAttribution `json:"imageAttribution,omitempty"`
 	DetailedDescription string            `json:"detailedDescription,omitempty"`
 	Reviews             []Review          `json:"reviews,omitempty"`
+	StockQuantity       int               `json:"stockQuantity"`
+	LowStockThreshold   int               `json:"lowStockThreshold"`
 }
 
 // Feedback represents customer feedback
@@ -123,4 +125,20 @@ type RegisterRequest struct {
 type AuthResponse struct {
 	Token string `json:"token"`
 	User  User   `json:"user"`
+}
+
+// DailyStat represents sales statistics for a single day
+type DailyStat struct {
+	Date         string  `json:"date"`
+	TotalOrders  int     `json:"totalOrders"`
+	TotalRevenue float64 `json:"totalRevenue"`
+}
+
+// DashboardStats represents aggregated data for the dashboard
+type DashboardStats struct {
+	TotalOrders   int         `json:"totalOrders"`
+	TotalRevenue  float64     `json:"totalRevenue"`
+	LowStockItems []Product   `json:"lowStockItems"`
+	Inventory     []Product   `json:"inventory"`
+	DailyStats    []DailyStat `json:"dailyStats"`
 }

@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"log/slog"
 
@@ -28,6 +29,48 @@ func InitDB() {
 	}
 
 	createTables()
+	ensureStockColumns()
+	seedDefaultUser()
+}
+
+func seedDefaultUser() {
+	var exists bool
+	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE id = 1)").Scan(&exists)
+	if err != nil {
+		slog.Error("failed to check for default user", "error", err)
+		return
+	}
+	if !exists {
+		// Insert a dummy user with ID 1
+		_, err := db.Exec(`INSERT INTO users (id, email, password, name, role) 
+			VALUES (1, 'demo@example.com', 'password', 'Demo User', 'customer')`)
+		if err != nil {
+			slog.Error("failed to seed default user", "error", err)
+		} else {
+			slog.Info("seeded default user (ID 1)")
+		}
+	}
+}
+
+func ensureStockColumns() {
+	// Add stock_quantity column with default 20
+	_, err := db.Exec("ALTER TABLE products ADD COLUMN stock_quantity INTEGER DEFAULT 20")
+	if err != nil {
+		slog.Info("stock_quantity column might already exist or error adding it", "details", err)
+	}
+
+	// Add low_stock_threshold column
+	_, err = db.Exec("ALTER TABLE products ADD COLUMN low_stock_threshold INTEGER DEFAULT 10")
+	if err != nil {
+		slog.Info("low_stock_threshold column might already exist or error adding it", "details", err)
+	}
+
+	// For dev/test: Ensure all products have at least 20 stock if they are 0 (or just reset to 20 for now as requested)
+	// The user requested "let all products start from 20".
+	_, err = db.Exec("UPDATE products SET stock_quantity = 20 WHERE stock_quantity = 0")
+	if err != nil {
+		slog.Info("Error updating stock quantity", "details", err)
+	}
 }
 
 // SeedDB seeds the database with initial data
@@ -143,6 +186,14 @@ func createTables() {
 		FOREIGN KEY(product_id) REFERENCES products(id)
 	);
 
+	CREATE TABLE IF NOT EXISTS users (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		email TEXT UNIQUE NOT NULL,
+		password TEXT NOT NULL,
+		name TEXT,
+		role TEXT DEFAULT 'customer'
+	);
+
 	CREATE TABLE IF NOT EXISTS orders (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id INTEGER,
@@ -172,7 +223,8 @@ func createTables() {
 // FetchProducts retrieves all products from the database
 func FetchProducts() ([]models.Product, error) {
 	rows, err := db.Query(`SELECT id, name, price, description, category, 
-		image, image_attribution, detailed_description FROM products`)
+		image, image_attribution, detailed_description, stock_quantity, 
+		low_stock_threshold FROM products`)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +235,8 @@ func FetchProducts() ([]models.Product, error) {
 		var p models.Product
 		var iaJSON string
 		err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.Description, &p.Category,
-			&p.Image, &iaJSON, &p.DetailedDescription)
+			&p.Image, &iaJSON, &p.DetailedDescription, &p.StockQuantity,
+			&p.LowStockThreshold)
 		if err != nil {
 			return nil, err
 		}
@@ -204,10 +257,10 @@ func FetchProductByID(id int) (*models.Product, error) {
 	var p models.Product
 	var iaJSON string
 	err := db.QueryRow(`SELECT id, name, price, description, category, image, 
-		image_attribution, detailed_description FROM products 
-		WHERE id = ?`, id).
+		image_attribution, detailed_description, stock_quantity,
+		low_stock_threshold FROM products WHERE id = ?`, id).
 		Scan(&p.ID, &p.Name, &p.Price, &p.Description, &p.Category, &p.Image,
-			&iaJSON, &p.DetailedDescription)
+			&iaJSON, &p.DetailedDescription, &p.StockQuantity, &p.LowStockThreshold)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +273,8 @@ func FetchProductByID(id int) (*models.Product, error) {
 // FetchProductsByCategory retrieves products by category
 func FetchProductsByCategory(category string) ([]models.Product, error) {
 	rows, err := db.Query(`SELECT id, name, price, description, category, 
-		image, image_attribution, detailed_description FROM products 
+		image, image_attribution, detailed_description, stock_quantity,
+		low_stock_threshold FROM products 
 		WHERE category = ?`, category)
 	if err != nil {
 		return nil, err
@@ -232,7 +286,8 @@ func FetchProductsByCategory(category string) ([]models.Product, error) {
 		var p models.Product
 		var iaJSON string
 		err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.Description, &p.Category,
-			&p.Image, &iaJSON, &p.DetailedDescription)
+			&p.Image, &iaJSON, &p.DetailedDescription, &p.StockQuantity,
+			&p.LowStockThreshold)
 		if err != nil {
 			return nil, err
 		}
@@ -289,10 +344,10 @@ func InsertProduct(p *models.Product) error {
 	ia, _ := json.Marshal(p.ImageAttribution)
 	result, err := db.Exec(`
 		INSERT INTO products (name, price, description, category, image, 
-			image_attribution, detailed_description)
-		VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			image_attribution, detailed_description, stock_quantity, low_stock_threshold)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		p.Name, p.Price, p.Description, p.Category, p.Image, string(ia),
-		p.DetailedDescription)
+		p.DetailedDescription, p.StockQuantity, p.LowStockThreshold)
 	if err != nil {
 		return err
 	}
@@ -309,10 +364,10 @@ func UpdateProduct(p *models.Product) error {
 	ia, _ := json.Marshal(p.ImageAttribution)
 	_, err := db.Exec(`
 		UPDATE products SET name=?, price=?, description=?, category=?, 
-		image=?, image_attribution=?, detailed_description=?
+		image=?, image_attribution=?, detailed_description=?, stock_quantity=?, low_stock_threshold=?
 		WHERE id=?`,
 		p.Name, p.Price, p.Description, p.Category, p.Image, string(ia),
-		p.DetailedDescription, p.ID)
+		p.DetailedDescription, p.StockQuantity, p.LowStockThreshold, p.ID)
 	return err
 }
 
@@ -329,7 +384,9 @@ func DeleteProduct(id int) error {
 // FetchAllFeedback retrieves all feedback from the database
 func FetchAllFeedback() ([]models.Feedback, error) {
 	rows, err := db.Query(`SELECT id, name, email, rating, comment, 
-		product_id, product_name, date FROM feedback ORDER BY date DESC`)
+		product_id, product_name, date FROM feedback 
+		WHERE product_id IS NOT NULL AND product_name != '' 
+		ORDER BY date DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -394,6 +451,24 @@ func CreateOrder(order *models.Order) error {
 	}
 	defer tx.Rollback()
 
+	// Check stock availability and decrement stock
+	for _, item := range order.Items {
+		var currentStock int
+		err := tx.QueryRow("SELECT stock_quantity FROM products WHERE id = ?", item.ProductID).Scan(&currentStock)
+		if err != nil {
+			return err // Product not found or other error
+		}
+
+		if currentStock < item.Quantity {
+			return fmt.Errorf("insufficient stock for product ID %d", item.ProductID)
+		}
+
+		_, err = tx.Exec("UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?", item.Quantity, item.ProductID)
+		if err != nil {
+			return err
+		}
+	}
+
 	result, err := tx.Exec(`
 		INSERT INTO orders (user_id, total_price, status)
 		VALUES (?, ?, ?)`,
@@ -422,6 +497,93 @@ func CreateOrder(order *models.Order) error {
 	}
 
 	return tx.Commit()
+}
+
+// GetDashboardStats retrieves aggregated data for the dashboard
+func GetDashboardStats() (*models.DashboardStats, error) {
+	stats := &models.DashboardStats{}
+
+	// Total Orders
+	err := db.QueryRow("SELECT COUNT(*) FROM orders").Scan(&stats.TotalOrders)
+	if err != nil {
+		return nil, err
+	}
+
+	// Total Revenue
+	var totalRevenue sql.NullFloat64
+	err = db.QueryRow("SELECT SUM(total_price) FROM orders WHERE status != 'cancelled'").Scan(&totalRevenue)
+	if err != nil {
+		return nil, err
+	}
+	if totalRevenue.Valid {
+		stats.TotalRevenue = totalRevenue.Float64
+	}
+
+	// Low Stock Items
+	rows, err := db.Query(`SELECT id, name, price, description, category, 
+		image, image_attribution, detailed_description, stock_quantity, low_stock_threshold 
+		FROM products WHERE stock_quantity <= low_stock_threshold`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var p models.Product
+		var iaJSON string
+		err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.Description, &p.Category,
+			&p.Image, &iaJSON, &p.DetailedDescription, &p.StockQuantity, &p.LowStockThreshold)
+		if err != nil {
+			return nil, err
+		}
+		json.Unmarshal([]byte(iaJSON), &p.ImageAttribution)
+		stats.LowStockItems = append(stats.LowStockItems, p)
+	}
+
+	// Full Inventory
+	rows, err = db.Query(`SELECT id, name, price, description, category, 
+		image, image_attribution, detailed_description, stock_quantity, low_stock_threshold 
+		FROM products ORDER BY name ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var p models.Product
+		var iaJSON string
+		err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.Description, &p.Category,
+			&p.Image, &iaJSON, &p.DetailedDescription, &p.StockQuantity, &p.LowStockThreshold)
+		if err != nil {
+			return nil, err
+		}
+		json.Unmarshal([]byte(iaJSON), &p.ImageAttribution)
+		stats.Inventory = append(stats.Inventory, p)
+	}
+
+	// Daily Stats (Last 7 days)
+	rows, err = db.Query(`
+		SELECT date(created_at) as day, COUNT(*) as count, SUM(total_price) as revenue
+		FROM orders
+		WHERE status != 'cancelled' AND created_at >= date('now', '-7 days')
+		GROUP BY date(created_at)
+		ORDER BY date(created_at) ASC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var ds models.DailyStat
+		err := rows.Scan(&ds.Date, &ds.TotalOrders, &ds.TotalRevenue)
+		if err != nil {
+			return nil, err
+		}
+		stats.DailyStats = append(stats.DailyStats, ds)
+	}
+
+	return stats, nil
 }
 
 // FetchOrdersByUserID retrieves all orders for a specific user

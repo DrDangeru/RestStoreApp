@@ -71,8 +71,10 @@ func SubmitFeedback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate feedback
-	if feedback.Name == "" || feedback.Email == "" || feedback.Comment == "" {
-		http.Error(w, "Name, email, and comment are required",
+	// User should not have to enter the product ID and product name
+	// These should be automatically set based on the product being reviewed
+	if feedback.Name == "" || feedback.Email == "" || feedback.Comment == "" || feedback.ProductID == nil || feedback.ProductName == "" {
+		http.Error(w, "Name, email, comment, product ID, and product name are required",
 			http.StatusBadRequest)
 		return
 	}
@@ -211,4 +213,16 @@ func GetUserOrders(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(orders)
+}
+
+// GetDashboardStats handles GET /api/dashboard
+func GetDashboardStats(w http.ResponseWriter, r *http.Request) {
+	stats, err := repository.GetDashboardStats()
+	if err != nil {
+		http.Error(w, "Failed to fetch dashboard stats", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
 }

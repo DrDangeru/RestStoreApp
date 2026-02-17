@@ -4,6 +4,7 @@ import Feedback from './components/Feedback'
 import EasternCategory from './components/EasternCategory'
 import WesternCategory from './components/WesternCategory'
 import SpecialsBanner from './components/SpecialsBanner'
+import AdminDashboard from './components/AdminDashboard'
 import styles from './App.module.css'
 
 const API_URL = 'http://localhost:8080/api'
@@ -14,6 +15,7 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showFeedback, setShowFeedback] = useState(false)
+  const [showAdmin, setShowAdmin] = useState(false)
   const [cartItems, setCartItems] = useState<CartItem[]>([])
 
   // Cart Handlers
@@ -55,8 +57,55 @@ function App() {
     setCartItems(prev => prev.filter((_, i) => i !== index))
   }
 
-  const handleCheckout = () => {
-    alert('Checkout functionality coming soon!')
+  const handleCheckout = async () => {
+    if (cartItems.length === 0) return;
+
+    setLoading(true);
+    try {
+      const totalPrice = cartItems.reduce((sum, item) => {
+        const customizationsCost = item.customizations?.reduce((cSum, opt) => cSum + opt.price, 0) || 0;
+        return sum + ((item.product.price + customizationsCost) * item.quantity);
+      }, 0);
+
+      const orderData = {
+        userId: 1, // Mock user ID for now
+        items: cartItems.map(item => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+          portionSize: item.portionSize,
+          customizations: item.customizations || []
+        })),
+        totalPrice: totalPrice,
+        status: 'pending'
+      };
+
+      const response = await fetch(`${API_URL}/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Checkout failed');
+      }
+
+      // Success
+      alert('Order placed successfully! Enjoy your meal. 😋');
+      setCartItems([]);
+      setSelectedCategory(null); // Go back to home
+      
+      // Refresh products to show updated stock if we were to re-fetch
+      // For now, just letting the user navigate normally will eventually trigger re-fetch or we could force it.
+      
+    } catch (err) {
+      alert(`Checkout failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      console.error('Checkout error:', err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   // Fetch products from Go API
@@ -100,11 +149,23 @@ function App() {
     return <Feedback onBack={handleBackToHome} />
   }
 
+  // Admin Dashboard
+  if (showAdmin) {
+    return <AdminDashboard onClose={() => setShowAdmin(false)} />
+  }
+
   // Landing page
   if (!selectedCategory) {
     return (
       <div className={styles['landing-page']}>
         <SpecialsBanner />
+        <button 
+          className={styles['admin-toggle']}
+          onClick={() => setShowAdmin(true)}
+          style={{ position: 'absolute', top: '80px', right: '20px' }}
+        >
+          ⚙️
+        </button>
         <div className={styles['landing-content']}>
           <h1 className={styles['landing-title']}>What do you feel like eating?</h1>
           {loading && <p className={styles['loading-msg']}>Loading menu...</p>}

@@ -23,6 +23,22 @@ export interface Product {
         source: string;
         url: string;
     };
+    stockQuantity?: number;
+    lowStockThreshold?: number;
+}
+
+export interface DailyStat {
+    date: string;
+    totalOrders: number;
+    totalRevenue: number;
+}
+
+export interface DashboardStats {
+    totalOrders: number;
+    totalRevenue: number;
+    lowStockItems: Product[];
+    inventory: Product[];
+    dailyStats: DailyStat[];
 }
 
 export interface CustomizationOption {

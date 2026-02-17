@@ -92,6 +92,7 @@ func main() {
 	r.HandleFunc("/api/products/category/{category}",
 		handlers.GetProductsByCategory).Methods("GET")
 	r.HandleFunc("/api/products/{id}", handlers.GetProduct).Methods("GET")
+	r.HandleFunc("/api/dashboard", handlers.GetDashboardStats).Methods("GET")
 	r.HandleFunc("/api/feedback", handlers.SubmitFeedback).Methods("POST")
 	r.HandleFunc("/api/feedback", handlers.GetFeedback).Methods("GET")
 
