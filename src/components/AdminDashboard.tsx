@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import type { DashboardStats } from '../types';
 import styles from './AdminDashboard.module.css';
 
@@ -9,6 +10,7 @@ interface AdminDashboardProps {
 const API_URL = 'http://localhost:8080/api';
 
 function AdminDashboard({ onClose }: AdminDashboardProps) {
+  const { token } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +18,11 @@ function AdminDashboard({ onClose }: AdminDashboardProps) {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch(`${API_URL}/dashboard`);
+        const response = await fetch(`${API_URL}/dashboard`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch dashboard stats');
         }
@@ -29,8 +35,13 @@ function AdminDashboard({ onClose }: AdminDashboardProps) {
       }
     };
 
-    fetchStats();
-  }, []);
+    if (token) {
+      fetchStats();
+    } else {
+      setError("Unauthorized");
+      setLoading(false);
+    }
+  }, [token]);
 
   if (loading) return <div className={styles.loading}>Loading dashboard...</div>;
   if (error) return <div className={styles.error}>Error: {error}</div>;

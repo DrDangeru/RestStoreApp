@@ -1,21 +1,27 @@
 import { useState, useEffect } from 'react'
+import { useAuth } from './context/AuthContext'
 import type { Product, ProductCategory, CartItem, CustomizationOption } from './types'
 import Feedback from './components/Feedback'
 import EasternCategory from './components/EasternCategory'
 import WesternCategory from './components/WesternCategory'
 import SpecialsBanner from './components/SpecialsBanner'
 import AdminDashboard from './components/AdminDashboard'
+import LoginModal from './components/LoginModal'
+import UserProfile from './components/UserProfile'
 import styles from './App.module.css'
 
 const API_URL = 'http://localhost:8080/api'
 
 function App() {
+  const { user, token } = useAuth()
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showFeedback, setShowFeedback] = useState(false)
   const [showAdmin, setShowAdmin] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [showUserProfile, setShowUserProfile] = useState(false)
   const [cartItems, setCartItems] = useState<CartItem[]>([])
 
   // Cart Handlers
@@ -60,6 +66,11 @@ function App() {
   const handleCheckout = async () => {
     if (cartItems.length === 0) return;
 
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+
     setLoading(true);
     try {
       const totalPrice = cartItems.reduce((sum, item) => {
@@ -68,7 +79,7 @@ function App() {
       }, 0);
 
       const orderData = {
-        userId: 1, // Mock user ID for now
+        userId: user.id,
         items: cartItems.map(item => ({
           productId: item.product.id,
           quantity: item.quantity,
@@ -83,6 +94,7 @@ function App() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(orderData),
       });
@@ -96,9 +108,6 @@ function App() {
       alert('Order placed successfully! Enjoy your meal. 😋');
       setCartItems([]);
       setSelectedCategory(null); // Go back to home
-      
-      // Refresh products to show updated stock if we were to re-fetch
-      // For now, just letting the user navigate normally will eventually trigger re-fetch or we could force it.
       
     } catch (err) {
       alert(`Checkout failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -140,9 +149,15 @@ function App() {
     setShowFeedback(false)
   }
 
-  // const filteredProducts = selectedCategory 
-  //   ? products.filter(p => p.category === selectedCategory)
-  //   : []   This is inside individual category components!
+  const handleGearClick = () => {
+    if (!user) {
+      setShowLoginModal(true);
+    } else if (user.role === 'admin') {
+      setShowAdmin(true);
+    } else {
+      setShowUserProfile(true);
+    }
+  };
 
   // Feedback page
   if (showFeedback) {
@@ -154,86 +169,92 @@ function App() {
     return <AdminDashboard onClose={() => setShowAdmin(false)} />
   }
 
-  // Landing page
-  if (!selectedCategory) {
-    return (
-      <div className={styles['landing-page']}>
-        <SpecialsBanner />
-        <button 
-          className={styles['admin-toggle']}
-          onClick={() => setShowAdmin(true)}
-          style={{ position: 'absolute', top: '80px', right: '20px' }}
-        >
-          ⚙️
-        </button>
-        <div className={styles['landing-content']}>
-          <h1 className={styles['landing-title']}>What do you feel like eating?</h1>
-          {loading && <p className={styles['loading-msg']}>Loading menu...</p>}
-          {error && (
-            <div className={styles['error-container']}>
-              <p>Error: {error}</p>
-              <p className={styles['error-hint']}>Make sure the Go backend is running on port 8080</p>
+  return (
+    <>
+      {showLoginModal && (
+        <LoginModal 
+          onClose={() => setShowLoginModal(false)} 
+          onSuccess={() => {
+            setShowLoginModal(false);
+            // Optionally auto-open profile or dashboard? 
+            // For now, just close modal and let user click gear again or continue checkout
+          }} 
+        />
+      )}
+      
+      {showUserProfile && (
+        <UserProfile onClose={() => setShowUserProfile(false)} />
+      )}
+
+      {!selectedCategory ? (
+        <div className={styles['landing-page']}>
+          <SpecialsBanner />
+          <button 
+            className={styles['admin-toggle']}
+            onClick={handleGearClick}
+            style={{ position: 'absolute', top: '80px', right: '20px' }}
+          >
+            ⚙️
+          </button>
+          <div className={styles['landing-content']}>
+            <h1 className={styles['landing-title']}>What do you feel like eating?</h1>
+            {loading && <p className={styles['loading-msg']}>Loading menu...</p>}
+            {error && (
+              <div className={styles['error-container']}>
+                <p>Error: {error}</p>
+                <p className={styles['error-hint']}>Make sure the Go backend is running on port 8080</p>
+              </div>
+            )}
+            <div className={styles['category-buttons']}>
+              <button 
+                className={`${styles['category-btn']} ${styles['eastern-btn']}`}
+                onClick={() => handleCategorySelect('eastern')}
+                disabled={loading || !!error}
+              >
+                <span className={styles['category-icon']}>🥢</span>
+                <span className={styles['category-name']}>Eastern Eats</span>
+              </button>
+              <button 
+                className={`${styles['category-btn']} ${styles['western-btn']}`}
+                onClick={() => handleCategorySelect('western')}
+                disabled={loading || !!error}
+              >
+                <span className={styles['category-icon']}>🍔</span>
+                <span className={styles['category-name']}>Western Foods</span>
+              </button>
+              <button 
+                className={`${styles['category-btn']} ${styles['feedback-btn']}`}
+                onClick={() => setShowFeedback(true)}
+              >
+                <span className={styles['category-icon']}>💬</span>
+                <span className={styles['category-name']}>Feedback</span>
+              </button>
             </div>
-          )}
-          <div className={styles['category-buttons']}>
-            <button 
-              className={`${styles['category-btn']} ${styles['eastern-btn']}`}
-              onClick={() => handleCategorySelect('eastern')}
-              disabled={loading || !!error}
-            >
-              <span className={styles['category-icon']}>🥢</span>
-              <span className={styles['category-name']}>Eastern Eats</span>
-            </button>
-            <button 
-              className={`${styles['category-btn']} ${styles['western-btn']}`}
-              onClick={() => handleCategorySelect('western')}
-              disabled={loading || !!error}
-            >
-              <span className={styles['category-icon']}>🍔</span>
-              <span className={styles['category-name']}>Western Foods</span>
-            </button>
-            <button 
-              className={`${styles['category-btn']} ${styles['feedback-btn']}`}
-              onClick={() => setShowFeedback(true)}
-            >
-              <span className={styles['category-icon']}>💬</span>
-              <span className={styles['category-name']}>Feedback</span>
-            </button>
           </div>
         </div>
-      </div>
-    )
-  }
-
-  if (selectedCategory === 'eastern') {
-    return (
-      <EasternCategory 
-        products={products}
-        cartItems={cartItems}
-        onBackToHome={handleBackToHome}
-        onAddToCart={addToCart}
-        onUpdateQuantity={updateQuantity}
-        onRemoveItem={removeFromCart}
-        onCheckout={handleCheckout}
-      />
-    )
-  }
-
-  if (selectedCategory === 'western') {
-    return (
-      <WesternCategory 
-        products={products}
-        cartItems={cartItems}
-        onBackToHome={handleBackToHome}
-        onAddToCart={addToCart}
-        onUpdateQuantity={updateQuantity}
-        onRemoveItem={removeFromCart}
-        onCheckout={handleCheckout}
-      />
-    )
-  }
-
-  return null
+      ) : selectedCategory === 'eastern' ? (
+        <EasternCategory 
+          products={products}
+          cartItems={cartItems}
+          onBackToHome={handleBackToHome}
+          onAddToCart={addToCart}
+          onUpdateQuantity={updateQuantity}
+          onRemoveItem={removeFromCart}
+          onCheckout={handleCheckout}
+        />
+      ) : (
+        <WesternCategory 
+          products={products}
+          cartItems={cartItems}
+          onBackToHome={handleBackToHome}
+          onAddToCart={addToCart}
+          onUpdateQuantity={updateQuantity}
+          onRemoveItem={removeFromCart}
+          onCheckout={handleCheckout}
+        />
+      )}
+    </>
+  )
 }
 
 export default App

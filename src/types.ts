@@ -28,6 +28,31 @@ export interface Product {
     orderedQuantity?: number;
 }
 
+export interface User {
+    id: number;
+    email: string;
+    name: string;
+    role: 'admin' | 'customer';
+    phone: string;
+}
+
+export interface LoginRequest {
+    email: string;
+    password: string;
+}
+
+export interface RegisterRequest {
+    email: string;
+    password: string;
+    name: string;
+    phone: string;
+}
+
+export interface AuthResponse {
+    token: string;
+    user: User;
+}
+
 export interface DailyStat {
     date: string;
     totalOrders: number;
@@ -72,4 +97,20 @@ export interface Feedback {
     productId?: number;
     productName?: string;
     date?: string;
+}
+
+export interface OrderItem {
+    productId: number;
+    quantity: number;
+    portionSize: string;
+    customizations?: CustomizationOption[];
+}
+
+export interface Order {
+    id: number;
+    userId: number;
+    items: OrderItem[];
+    totalPrice: number;
+    status: string;
+    createdAt: string;
 }

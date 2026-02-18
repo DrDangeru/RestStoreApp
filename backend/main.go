@@ -92,7 +92,6 @@ func main() {
 	r.HandleFunc("/api/products/category/{category}",
 		handlers.GetProductsByCategory).Methods("GET")
 	r.HandleFunc("/api/products/{id}", handlers.GetProduct).Methods("GET")
-	r.HandleFunc("/api/dashboard", handlers.GetDashboardStats).Methods("GET")
 	r.HandleFunc("/api/feedback", handlers.SubmitFeedback).Methods("POST")
 	r.HandleFunc("/api/feedback", handlers.GetFeedback).Methods("GET")
 
@@ -104,21 +103,20 @@ func main() {
 	authRouter := r.PathPrefix("/api").Subrouter()
 	authRouter.Use(authMiddleware)
 	authRouter.HandleFunc("/auth/me", getMeHandler).Methods("GET")
+	authRouter.HandleFunc("/orders", handlers.CreateOrder).Methods("POST")
+	authRouter.HandleFunc("/orders/user/{userId}",
+		handlers.GetUserOrders).Methods("GET")
 
 	// Admin routes (require admin role)
 	adminRouter := r.PathPrefix("/api").Subrouter()
 	adminRouter.Use(authMiddleware)
 	adminRouter.Use(adminMiddleware)
+	adminRouter.HandleFunc("/dashboard", handlers.GetDashboardStats).Methods("GET")
 	adminRouter.HandleFunc("/products", handlers.CreateProduct).Methods("POST")
 	adminRouter.HandleFunc("/products/{id}",
 		handlers.UpdateProduct).Methods("PUT")
 	adminRouter.HandleFunc("/products/{id}",
 		handlers.DeleteProduct).Methods("DELETE")
-
-	// Order routes
-	r.HandleFunc("/api/orders", handlers.CreateOrder).Methods("POST")
-	r.HandleFunc("/api/orders/user/{userId}",
-		handlers.GetUserOrders).Methods("GET")
 
 	// Apply CORS middleware
 	handler := enableCORS(r)

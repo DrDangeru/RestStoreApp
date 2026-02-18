@@ -154,6 +154,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		Password: hashedPassword,
 		Name:     req.Name,
 		Role:     role,
+		Phone:    req.Phone,
 	}
 
 	if err := repository.CreateUser(user); err != nil {

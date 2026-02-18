@@ -179,11 +179,12 @@ func CreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// In a real app, UserID would come from auth context
-	if order.UserID == 0 {
-		http.Error(w, "User ID is required", http.StatusBadRequest)
+	claims, ok := r.Context().Value(models.UserContextKey).(*models.Claims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
+	order.UserID = claims.UserID
 
 	order.Status = "pending"
 	if err := repository.CreateOrder(&order); err != nil {
@@ -202,6 +203,18 @@ func GetUserOrders(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(vars["userId"])
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	claims, ok := r.Context().Value(models.UserContextKey).(*models.Claims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Only allow access if user requests their own orders or is admin
+	if claims.UserID != userID && claims.Role != "admin" {
+		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 

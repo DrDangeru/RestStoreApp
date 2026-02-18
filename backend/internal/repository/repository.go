@@ -30,7 +30,16 @@ func InitDB() {
 
 	createTables()
 	ensureStockColumns()
+	ensureUserColumns()
 	seedDefaultUser()
+}
+
+func ensureUserColumns() {
+	_, err := db.Exec("ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''")
+	if err != nil {
+		slog.Info("phone column might already exist or error adding it", "details",
+			err)
+	}
 }
 
 func seedDefaultUser() {
@@ -42,8 +51,8 @@ func seedDefaultUser() {
 	}
 	if !exists {
 		// Insert a dummy user with ID 1
-		_, err := db.Exec(`INSERT INTO users (id, email, password, name, role) 
-			VALUES (1, 'demo@example.com', 'password', 'Demo User', 'customer')`)
+		_, err := db.Exec(`INSERT INTO users (id, email, password, name, role, phone) 
+			VALUES (1, 'demo@example.com', 'password', 'Demo User', 'customer', '555-0199')`)
 		if err != nil {
 			slog.Error("failed to seed default user", "error", err)
 		} else {
@@ -417,9 +426,9 @@ func FetchAllFeedback() ([]models.Feedback, error) {
 // CreateUser inserts a new user into the database
 func CreateUser(user *models.User) error {
 	result, err := db.Exec(`
-		INSERT INTO users (email, password, name, role)
-		VALUES (?, ?, ?, ?)`,
-		user.Email, user.Password, user.Name, user.Role)
+		INSERT INTO users (email, password, name, role, phone)
+		VALUES (?, ?, ?, ?, ?)`,
+		user.Email, user.Password, user.Name, user.Role, user.Phone)
 	if err != nil {
 		return err
 	}
@@ -434,9 +443,9 @@ func CreateUser(user *models.User) error {
 // GetUserByEmail retrieves a user by email
 func GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
-	err := db.QueryRow(`SELECT id, email, password, name, role 
+	err := db.QueryRow(`SELECT id, email, password, name, role, phone 
 		FROM users WHERE email = ?`, email).
-		Scan(&user.ID, &user.Email, &user.Password, &user.Name, &user.Role)
+		Scan(&user.ID, &user.Email, &user.Password, &user.Name, &user.Role, &user.Phone)
 	if err != nil {
 		return nil, err
 	}
@@ -642,9 +651,9 @@ func GetUserCount() (int, error) {
 // GetUserByID retrieves a user by ID
 func GetUserByID(id int) (*models.User, error) {
 	var user models.User
-	err := db.QueryRow(`SELECT id, email, password, name, role 
+	err := db.QueryRow(`SELECT id, email, password, name, role, phone 
 		FROM users WHERE id = ?`, id).
-		Scan(&user.ID, &user.Email, &user.Password, &user.Name, &user.Role)
+		Scan(&user.ID, &user.Email, &user.Password, &user.Name, &user.Role, &user.Phone)
 	if err != nil {
 		return nil, err
 	}

@@ -106,6 +106,7 @@ type User struct {
 	Password string `json:"password,omitempty"`
 	Role     string `json:"role"` // "admin" or "customer"
 	Name     string `json:"name"`
+	Phone    string `json:"phone"`
 }
 
 // LoginRequest is the payload for login
@@ -119,6 +120,7 @@ type RegisterRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 	Name     string `json:"name"`
+	Phone    string `json:"phone"`
 }
 
 // AuthResponse is returned after successful auth
