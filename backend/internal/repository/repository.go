@@ -30,8 +30,16 @@ func InitDB() {
 
 	createTables()
 	ensureStockColumns()
+	ensureOrderedQuantityColumn()
 	ensureUserColumns()
 	seedDefaultUser()
+}
+
+func ensureOrderedQuantityColumn() {
+	_, err := db.Exec("ALTER TABLE products ADD COLUMN ordered_quantity INTEGER DEFAULT 0")
+	if err != nil {
+		slog.Info("ordered_quantity column might already exist or error adding it", "details", err)
+	}
 }
 
 func ensureUserColumns() {
@@ -233,7 +241,7 @@ func createTables() {
 func FetchProducts() ([]models.Product, error) {
 	rows, err := db.Query(`SELECT id, name, price, description, category, 
 		image, image_attribution, detailed_description, stock_quantity, 
-		low_stock_threshold FROM products`)
+		low_stock_threshold, ordered_quantity FROM products`)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +253,7 @@ func FetchProducts() ([]models.Product, error) {
 		var iaJSON string
 		err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.Description, &p.Category,
 			&p.Image, &iaJSON, &p.DetailedDescription, &p.StockQuantity,
-			&p.LowStockThreshold)
+			&p.LowStockThreshold, &p.OrderedQuantity)
 		if err != nil {
 			return nil, err
 		}
@@ -267,9 +275,9 @@ func FetchProductByID(id int) (*models.Product, error) {
 	var iaJSON string
 	err := db.QueryRow(`SELECT id, name, price, description, category, image, 
 		image_attribution, detailed_description, stock_quantity,
-		low_stock_threshold FROM products WHERE id = ?`, id).
+		low_stock_threshold, ordered_quantity FROM products WHERE id = ?`, id).
 		Scan(&p.ID, &p.Name, &p.Price, &p.Description, &p.Category, &p.Image,
-			&iaJSON, &p.DetailedDescription, &p.StockQuantity, &p.LowStockThreshold)
+			&iaJSON, &p.DetailedDescription, &p.StockQuantity, &p.LowStockThreshold, &p.OrderedQuantity)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +291,7 @@ func FetchProductByID(id int) (*models.Product, error) {
 func FetchProductsByCategory(category string) ([]models.Product, error) {
 	rows, err := db.Query(`SELECT id, name, price, description, category, 
 		image, image_attribution, detailed_description, stock_quantity,
-		low_stock_threshold FROM products 
+		low_stock_threshold, ordered_quantity FROM products 
 		WHERE category = ?`, category)
 	if err != nil {
 		return nil, err
@@ -296,7 +304,7 @@ func FetchProductsByCategory(category string) ([]models.Product, error) {
 		var iaJSON string
 		err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.Description, &p.Category,
 			&p.Image, &iaJSON, &p.DetailedDescription, &p.StockQuantity,
-			&p.LowStockThreshold)
+			&p.LowStockThreshold, &p.OrderedQuantity)
 		if err != nil {
 			return nil, err
 		}
@@ -353,10 +361,10 @@ func InsertProduct(p *models.Product) error {
 	ia, _ := json.Marshal(p.ImageAttribution)
 	result, err := db.Exec(`
 		INSERT INTO products (name, price, description, category, image, 
-			image_attribution, detailed_description, stock_quantity, low_stock_threshold)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			image_attribution, detailed_description, stock_quantity, low_stock_threshold, ordered_quantity)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		p.Name, p.Price, p.Description, p.Category, p.Image, string(ia),
-		p.DetailedDescription, p.StockQuantity, p.LowStockThreshold)
+		p.DetailedDescription, p.StockQuantity, p.LowStockThreshold, p.OrderedQuantity)
 	if err != nil {
 		return err
 	}
@@ -373,10 +381,10 @@ func UpdateProduct(p *models.Product) error {
 	ia, _ := json.Marshal(p.ImageAttribution)
 	_, err := db.Exec(`
 		UPDATE products SET name=?, price=?, description=?, category=?, 
-		image=?, image_attribution=?, detailed_description=?, stock_quantity=?, low_stock_threshold=?
+		image=?, image_attribution=?, detailed_description=?, stock_quantity=?, low_stock_threshold=?, ordered_quantity=?
 		WHERE id=?`,
 		p.Name, p.Price, p.Description, p.Category, p.Image, string(ia),
-		p.DetailedDescription, p.StockQuantity, p.LowStockThreshold, p.ID)
+		p.DetailedDescription, p.StockQuantity, p.LowStockThreshold, p.OrderedQuantity, p.ID)
 	return err
 }
 
@@ -508,6 +516,24 @@ func CreateOrder(order *models.Order) error {
 	return tx.Commit()
 }
 
+// OrderSupplies updates stock and ordered quantities based on whether supplies are being ordered or received
+// Should stay visible for 2 days for tracking
+func OrderSupplies(productID int, quantity int, received bool) error {
+	if received {
+		// Receiving supplies: increase stock, decrease ordered
+		// Ensure we don't decrease ordered below 0 (optional safety check, but good practice)
+		_, err := db.Exec(`UPDATE products 
+			SET stock_quantity = stock_quantity + ?, 
+			    ordered_quantity = MAX(0, ordered_quantity - ?) 
+			WHERE id = ?`, quantity, quantity, productID)
+		return err
+	} else {
+		// Ordering supplies: increase ordered
+		_, err := db.Exec("UPDATE products SET ordered_quantity = ordered_quantity + ? WHERE id = ?", quantity, productID)
+		return err
+	}
+}
+
 // GetDashboardStats retrieves aggregated data for the dashboard
 func GetDashboardStats() (*models.DashboardStats, error) {
 	stats := &models.DashboardStats{}
@@ -530,7 +556,7 @@ func GetDashboardStats() (*models.DashboardStats, error) {
 
 	// Low Stock Items
 	rows, err := db.Query(`SELECT id, name, price, description, category, 
-		image, image_attribution, detailed_description, stock_quantity, low_stock_threshold 
+		image, image_attribution, detailed_description, stock_quantity, low_stock_threshold, ordered_quantity 
 		FROM products WHERE stock_quantity <= low_stock_threshold`)
 	if err != nil {
 		return nil, err
@@ -541,7 +567,7 @@ func GetDashboardStats() (*models.DashboardStats, error) {
 		var p models.Product
 		var iaJSON string
 		err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.Description, &p.Category,
-			&p.Image, &iaJSON, &p.DetailedDescription, &p.StockQuantity, &p.LowStockThreshold)
+			&p.Image, &iaJSON, &p.DetailedDescription, &p.StockQuantity, &p.LowStockThreshold, &p.OrderedQuantity)
 		if err != nil {
 			return nil, err
 		}
@@ -551,7 +577,7 @@ func GetDashboardStats() (*models.DashboardStats, error) {
 
 	// Full Inventory
 	rows, err = db.Query(`SELECT id, name, price, description, category, 
-		image, image_attribution, detailed_description, stock_quantity, low_stock_threshold 
+		image, image_attribution, detailed_description, stock_quantity, low_stock_threshold, ordered_quantity 
 		FROM products ORDER BY name ASC`)
 	if err != nil {
 		return nil, err
@@ -562,7 +588,7 @@ func GetDashboardStats() (*models.DashboardStats, error) {
 		var p models.Product
 		var iaJSON string
 		err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.Description, &p.Category,
-			&p.Image, &iaJSON, &p.DetailedDescription, &p.StockQuantity, &p.LowStockThreshold)
+			&p.Image, &iaJSON, &p.DetailedDescription, &p.StockQuantity, &p.LowStockThreshold, &p.OrderedQuantity)
 		if err != nil {
 			return nil, err
 		}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from './context/AuthContext'
 import type { Product, ProductCategory, CartItem, CustomizationOption } from './types'
 import Feedback from './components/Feedback'
@@ -6,8 +6,7 @@ import EasternCategory from './components/EasternCategory'
 import WesternCategory from './components/WesternCategory'
 import SpecialsBanner from './components/SpecialsBanner'
 import AdminDashboard from './components/AdminDashboard'
-import LoginModal from './components/LoginModal'
-import UserProfile from './components/UserProfile'
+import AuthControl, { type AuthControlHandle } from './components/AuthControl'
 import styles from './App.module.css'
 
 const API_URL = 'http://localhost:8080/api'
@@ -20,9 +19,9 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [showFeedback, setShowFeedback] = useState(false)
   const [showAdmin, setShowAdmin] = useState(false)
-  const [showLoginModal, setShowLoginModal] = useState(false)
-  const [showUserProfile, setShowUserProfile] = useState(false)
   const [cartItems, setCartItems] = useState<CartItem[]>([])
+  
+  const authControlRef = useRef<AuthControlHandle>(null)
 
   // Cart Handlers
   const addToCart = (product: Product, portion: string = 'Medium', 
@@ -67,7 +66,7 @@ function App() {
     if (cartItems.length === 0) return;
 
     if (!user) {
-      setShowLoginModal(true);
+      authControlRef.current?.openLogin();
       return;
     }
 
@@ -149,16 +148,6 @@ function App() {
     setShowFeedback(false)
   }
 
-  const handleGearClick = () => {
-    if (!user) {
-      setShowLoginModal(true);
-    } else if (user.role === 'admin') {
-      setShowAdmin(true);
-    } else {
-      setShowUserProfile(true);
-    }
-  };
-
   // Feedback page
   if (showFeedback) {
     return <Feedback onBack={handleBackToHome} />
@@ -171,31 +160,15 @@ function App() {
 
   return (
     <>
-      {showLoginModal && (
-        <LoginModal 
-          onClose={() => setShowLoginModal(false)} 
-          onSuccess={() => {
-            setShowLoginModal(false);
-            // Optionally auto-open profile or dashboard? 
-            // For now, just close modal and let user click gear again or continue checkout
-          }} 
-        />
-      )}
-      
-      {showUserProfile && (
-        <UserProfile onClose={() => setShowUserProfile(false)} />
-      )}
+      <AuthControl 
+        ref={authControlRef}
+        onAdminClick={() => setShowAdmin(true)}
+        hideButton={!!selectedCategory}
+      />
 
       {!selectedCategory ? (
         <div className={styles['landing-page']}>
           <SpecialsBanner />
-          <button 
-            className={styles['admin-toggle']}
-            onClick={handleGearClick}
-            style={{ position: 'absolute', top: '80px', right: '20px' }}
-          >
-            ⚙️
-          </button>
           <div className={styles['landing-content']}>
             <h1 className={styles['landing-title']}>What do you feel like eating?</h1>
             {loading && <p className={styles['loading-msg']}>Loading menu...</p>}

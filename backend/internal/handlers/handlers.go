@@ -239,3 +239,37 @@ func GetDashboardStats(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(stats)
 }
+
+// OrderSupplies handles POST /api/products/{id}/supply
+func OrderSupplies(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid product ID", http.StatusBadRequest)
+		return
+	}
+
+	var req models.OrderSupplyRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Quantity <= 0 {
+		http.Error(w, "Quantity must be positive", http.StatusBadRequest)
+		return
+	}
+
+	if err := repository.OrderSupplies(id, req.Quantity, req.Received); err != nil {
+		http.Error(w, "Failed to update supplies", http.StatusInternalServerError)
+		return
+	}
+
+	message := "Supply order placed successfully"
+	if req.Received {
+		message = "Supplies received successfully"
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": message})
+}

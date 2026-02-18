@@ -32,14 +32,14 @@ const SpecialsBanner: React.FC<SpecialsBannerProps> = ({
 
   return (
     <div className={styles['specials-banner']} style={style}>
-      <div className={styles['marquee-track']}>
-        <div className={styles.marquee} style={marqueeStyle}>
+      <div className={styles['marquee-track']} style={marqueeStyle}>
+        <div className={styles.marquee}>
           <span>{message}</span>
           <span>{message}</span>
           <span>{message}</span>
           <span>{message}</span>
         </div>
-        <div className={styles.marquee} style={marqueeStyle}>
+        <div className={styles.marquee}>
           <span>{message}</span>
           <span>{message}</span>
           <span>{message}</span>

@@ -60,6 +60,7 @@ type Product struct {
 	Reviews             []Review          `json:"reviews,omitempty"`
 	StockQuantity       int               `json:"stockQuantity"`
 	LowStockThreshold   int               `json:"lowStockThreshold"`
+	OrderedQuantity     int               `json:"orderedQuantity"`
 }
 
 // Feedback represents customer feedback
@@ -127,6 +128,12 @@ type RegisterRequest struct {
 type AuthResponse struct {
 	Token string `json:"token"`
 	User  User   `json:"user"`
+}
+
+// OrderSupplyRequest is the payload for ordering supplies
+type OrderSupplyRequest struct {
+	Quantity int  `json:"quantity"`
+	Received bool `json:"received"`
 }
 
 // DailyStat represents sales statistics for a single day

@@ -117,6 +117,8 @@ func main() {
 		handlers.UpdateProduct).Methods("PUT")
 	adminRouter.HandleFunc("/products/{id}",
 		handlers.DeleteProduct).Methods("DELETE")
+	adminRouter.HandleFunc("/products/{id}/supply",
+		handlers.OrderSupplies).Methods("POST")
 
 	// Apply CORS middleware
 	handler := enableCORS(r)

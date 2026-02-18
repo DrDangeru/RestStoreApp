@@ -43,6 +43,51 @@ function AdminDashboard({ onClose }: AdminDashboardProps) {
     }
   }, [token]);
 
+  const handleOrderSupply = async (productId: number, productName: string, received: boolean = false) => {
+    try {
+      // If receiving, we probably want to receive the full ordered amount? 
+      // For simplicity, let's assume we receive/order in batches of 50 for now, 
+      // or if receiving, maybe we should ask how much?
+      // The backend logic for receiving uses the quantity passed to increment stock and decrement ordered.
+      // Let's stick to the fixed 50 for ordering, but for receiving, ideally we receive what is ordered.
+      // However, the backend logic: 
+      // UPDATE products SET stock_quantity = stock_quantity + ?, ordered_quantity = MAX(0, ordered_quantity - ?)
+      
+      // If we blindly send 50, and ordered is 100, we receive 50.
+      // If ordered is 20, and we send 50, we receive 50 (stock +50), ordered becomes 0.
+      
+      // Let's keep it simple: Order 50. Receive 50.
+      const quantity = 50;
+
+      const response = await fetch(`${API_URL}/products/${productId}/supply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ quantity, received })
+      });
+
+      if (!response.ok) {
+        throw new Error(received ? 'Failed to receive supplies' : 'Failed to place supply order');
+      }
+
+      // Refresh stats
+      const statsResponse = await fetch(`${API_URL}/dashboard`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (statsResponse.ok) {
+        const data = await statsResponse.json();
+        setStats(data);
+      }
+      
+      const action = received ? 'Received' : 'Ordered';
+      alert(`${action} ${quantity} units of ${productName}.`);
+    } catch (err) {
+      alert(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
   if (loading) return <div className={styles.loading}>Loading dashboard...</div>;
   if (error) return <div className={styles.error}>Error: {error}</div>;
   if (!stats) return <div className={styles.error}>No data available</div>;
@@ -112,32 +157,22 @@ function AdminDashboard({ onClose }: AdminDashboardProps) {
                       )}
                     </td>
                     <td>
-                      <button 
-                        className={styles['order-btn']}
-                        onClick={() => {
-                          // Mock order functionality
-                          const orderQty = 50; // Default order quantity
-                          setStats(prev => {
-                            if (!prev) return null;
-                            return {
-                              ...prev,
-                              inventory: prev.inventory.map(p => 
-                                p.id === item.id 
-                                  ? { ...p, orderedQuantity: (p.orderedQuantity || 0) + orderQty }
-                                  : p
-                              ),
-                              lowStockItems: prev.lowStockItems.map(p =>
-                                p.id === item.id
-                                  ? { ...p, orderedQuantity: (p.orderedQuantity || 0) + orderQty }
-                                  : p
-                              )
-                            };
-                          });
-                          alert(`Ordered ${orderQty} units of ${item.name} from supplier.`);
-                        }}
-                      >
-                        Order Supplier
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <button 
+                          className={styles['order-btn']}
+                          onClick={() => handleOrderSupply(item.id, item.name)}
+                        >
+                          Order
+                        </button>
+                        {(item.orderedQuantity || 0) > 0 && (
+                          <button 
+                            className={styles['receive-btn']}
+                            onClick={() => handleOrderSupply(item.id, item.name, true)}
+                          >
+                            Receive
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -182,31 +217,22 @@ function AdminDashboard({ onClose }: AdminDashboardProps) {
                       )}
                     </td>
                     <td>
-                      <button 
-                        className={styles['order-btn']}
-                        onClick={() => {
-                          const orderQty = 50;
-                          setStats(prev => {
-                            if (!prev) return null;
-                            return {
-                              ...prev,
-                              inventory: prev.inventory.map(p => 
-                                p.id === item.id 
-                                  ? { ...p, orderedQuantity: (p.orderedQuantity || 0) + orderQty }
-                                  : p
-                              ),
-                              lowStockItems: prev.lowStockItems.map(p =>
-                                p.id === item.id
-                                  ? { ...p, orderedQuantity: (p.orderedQuantity || 0) + orderQty }
-                                  : p
-                              )
-                            };
-                          });
-                          alert(`Ordered ${orderQty} units of ${item.name} from supplier.`);
-                        }}
-                      >
-                        Order Supplier
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <button 
+                          className={styles['order-btn']}
+                          onClick={() => handleOrderSupply(item.id, item.name)}
+                        >
+                          Order
+                        </button>
+                        {(item.orderedQuantity || 0) > 0 && (
+                          <button 
+                            className={styles['receive-btn']}
+                            onClick={() => handleOrderSupply(item.id, item.name, true)}
+                          >
+                            Receive
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
