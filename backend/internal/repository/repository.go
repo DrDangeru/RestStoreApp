@@ -7,6 +7,8 @@ import (
 	"log"
 	"log/slog"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"restaurant-backend/internal/models"
 
 	_ "modernc.org/sqlite"
@@ -38,14 +40,14 @@ func InitDB() {
 func ensureOrderedQuantityColumn() {
 	_, err := db.Exec("ALTER TABLE products ADD COLUMN ordered_quantity INTEGER DEFAULT 0")
 	if err != nil {
-		slog.Info("ordered_quantity column might already exist or error adding it", "details", err)
+		slog.Debug("ordered_quantity column might already exist or error adding it", "details", err)
 	}
 }
 
 func ensureUserColumns() {
 	_, err := db.Exec("ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''")
 	if err != nil {
-		slog.Info("phone column might already exist or error adding it", "details",
+		slog.Debug("phone column might already exist or error adding it", "details",
 			err)
 	}
 }
@@ -60,11 +62,44 @@ func seedDefaultUser() {
 	if !exists {
 		// Insert a dummy user with ID 1
 		_, err := db.Exec(`INSERT INTO users (id, email, password, name, role, phone) 
-			VALUES (1, 'demo@example.com', 'password', 'Demo User', 'customer', '555-0199')`)
+			VALUES (1, 'demo@example.com', '$2a$14$V0A2.x3B.2qL4vQnLh1C/.N.2vR3Oq1G/E8Z3M8U3N9D5A0P9D0K6', 'Demo User', 'customer', '555-0199')`)
 		if err != nil {
 			slog.Error("failed to seed default user", "error", err)
 		} else {
 			slog.Info("seeded default user (ID 1)")
+		}
+	}
+
+	// Seed or update admin user
+	// Generate hash
+	hash, err := bcrypt.GenerateFromPassword([]byte("admin12345"), 14)
+	if err != nil {
+		slog.Error("failed to hash admin password", "error", err)
+		return
+	}
+
+	// Use UPSERT-like behavior or just UPDATE if exists, else INSERT
+	var adminExists bool
+	err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = 'admin@admin.com')").Scan(&adminExists)
+	if err != nil {
+		slog.Error("failed to check for admin user", "error", err)
+		return
+	}
+
+	if adminExists {
+		_, err = db.Exec("UPDATE users SET password = ? WHERE email = 'admin@admin.com'", string(hash))
+		if err != nil {
+			slog.Error("failed to update admin password", "error", err)
+		} else {
+			slog.Info("updated admin password")
+		}
+	} else {
+		_, err = db.Exec(`INSERT INTO users (email, password, name, role, phone) 
+			VALUES ('admin@admin.com', ?, 'Admin User', 'admin', '555-0000')`, string(hash))
+		if err != nil {
+			slog.Error("failed to seed admin user", "error", err)
+		} else {
+			slog.Info("seeded admin user")
 		}
 	}
 }
@@ -73,20 +108,20 @@ func ensureStockColumns() {
 	// Add stock_quantity column with default 20
 	_, err := db.Exec("ALTER TABLE products ADD COLUMN stock_quantity INTEGER DEFAULT 20")
 	if err != nil {
-		slog.Info("stock_quantity column might already exist or error adding it", "details", err)
+		slog.Debug("stock_quantity column might already exist or error adding it", "details", err)
 	}
 
 	// Add low_stock_threshold column
 	_, err = db.Exec("ALTER TABLE products ADD COLUMN low_stock_threshold INTEGER DEFAULT 10")
 	if err != nil {
-		slog.Info("low_stock_threshold column might already exist or error adding it", "details", err)
+		slog.Debug("low_stock_threshold column might already exist or error adding it", "details", err)
 	}
 
 	// For dev/test: Ensure all products have at least 20 stock if they are 0 (or just reset to 20 for now as requested)
 	// The user requested "let all products start from 20".
 	_, err = db.Exec("UPDATE products SET stock_quantity = 20 WHERE stock_quantity = 0")
 	if err != nil {
-		slog.Info("Error updating stock quantity", "details", err)
+		slog.Debug("Error updating stock quantity", "details", err)
 	}
 }
 

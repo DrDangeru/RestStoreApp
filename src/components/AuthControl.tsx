@@ -1,6 +1,6 @@
 import { useState, useImperativeHandle, forwardRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import LoginModal from './LoginModal';
+import AuthModal from './AuthModal';
 import UserProfile from './UserProfile';
 import styles from './AuthControl.module.css';
 
@@ -15,18 +15,18 @@ export interface AuthControlHandle {
 
 const AuthControl = forwardRef<AuthControlHandle, AuthControlProps>(({ onAdminClick, hideButton = false }, ref) => {
   const { user } = useAuth();
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
 
   useImperativeHandle(ref, () => ({
     openLogin: () => {
-      setShowLoginModal(true);
+      setShowAuthModal(true);
     }
   }));
 
   const handleGearClick = () => {
     if (!user) {
-      setShowLoginModal(true);
+      setShowAuthModal(true);
     } else if (user.role === 'admin') {
       onAdminClick();
     } else {
@@ -47,11 +47,11 @@ const AuthControl = forwardRef<AuthControlHandle, AuthControlProps>(({ onAdminCl
         </button>
       )}
 
-      {showLoginModal && (
-        <LoginModal 
-          onClose={() => setShowLoginModal(false)} 
+      {showAuthModal && (
+        <AuthModal 
+          onClose={() => setShowAuthModal(false)} 
           onSuccess={() => {
-            setShowLoginModal(false);
+            setShowAuthModal(false);
           }} 
         />
       )}

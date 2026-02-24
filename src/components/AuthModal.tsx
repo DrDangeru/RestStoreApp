@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import styles from './LoginModal.module.css';
+import styles from './AuthModal.module.css';
 
-interface LoginModalProps {
+interface AuthModalProps {
   onClose: () => void;
   onSuccess: () => void;
 }
 
-const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSuccess }) => {
+const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -101,4 +101,4 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSuccess }) => {
   );
 };
 
-export default LoginModal;
+export default AuthModal;
