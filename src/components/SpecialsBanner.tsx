@@ -1,12 +1,6 @@
 import React from 'react';
+import type { SpecialsBannerProps } from '../types';
 import styles from './SpecialsBanner.module.css';
-
-interface SpecialsBannerProps {
-  message?: string;
-  backgroundColor?: string;
-  textColor?: string;
-  speed?: number; // seconds for animation duration
-}
 
 const DEFAULT_CONFIG = {
   message: "Just till Tuesday - 20% off Kimchi - try now 🥳",

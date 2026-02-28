@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import type { AuthModalProps } from '../types';
 import styles from './AuthModal.module.css';
-
-interface AuthModalProps {
-  onClose: () => void;
-  onSuccess: () => void;
-}
 
 const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);

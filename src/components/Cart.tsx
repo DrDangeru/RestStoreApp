@@ -1,16 +1,8 @@
 import React from 'react';
-import type { CartItem } from '../types';
+import type { CartProps } from '../types';
 import styles from './Cart.module.css';
 
-interface CartProps {
-    cartItems: CartItem[];
-    onUpdateQuantity: (index: number, change: number) => void;
-    onRemoveItem: (index: number) => void;
-    onClose: () => void;
-    onCheckout: () => void;
-}
-
-const Cart: React.FC<CartProps> = ({ cartItems, onUpdateQuantity, onRemoveItem, onClose,
+const Cart: React.FC<CartProps & { onClose: () => void }> = ({ cartItems, onUpdateQuantity, onRemoveItem, onClose,
      onCheckout }) => {
     const total = cartItems.reduce((sum, item) => {
         const customizationsCost = item.customizations?.reduce((cSum, opt) => cSum + opt.price, 0) || 0;

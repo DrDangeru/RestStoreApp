@@ -656,6 +656,83 @@ func GetDashboardStats() (*models.DashboardStats, error) {
 	return stats, nil
 }
 
+// GetSalesReport retrieves daily/monthly sales and top items
+// Chart should accept this data and render it
+func GetSalesReport() (*models.SalesReport, error) {
+	report := &models.SalesReport{}
+
+	// Daily Sales (Last 30 days)
+	rows, err := db.Query(`
+		SELECT date(created_at) as day, COUNT(*) as count, SUM(total_price) as revenue
+		FROM orders
+		WHERE status != 'cancelled' AND created_at >= date('now', '-30 days')
+		GROUP BY date(created_at)
+		ORDER BY date(created_at) ASC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var ds models.DailyStat
+		err := rows.Scan(&ds.Date, &ds.TotalOrders, &ds.TotalRevenue)
+		if err != nil {
+			return nil, err
+		}
+		report.DailySales = append(report.DailySales, ds)
+	}
+
+	// Monthly Sales (Last 12 months)
+	rows, err = db.Query(`
+		SELECT strftime('%Y-%m', created_at) as month, COUNT(*) as count, SUM(total_price) as revenue
+		FROM orders
+		WHERE status != 'cancelled' AND created_at >= date('now', '-12 months')
+		GROUP BY strftime('%Y-%m', created_at)
+		ORDER BY strftime('%Y-%m', created_at) ASC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var ms models.MonthlyStat
+		err := rows.Scan(&ms.Month, &ms.TotalOrders, &ms.TotalRevenue)
+		if err != nil {
+			return nil, err
+		}
+		report.MonthlySales = append(report.MonthlySales, ms)
+	}
+
+	// Top Selling Items (Top 20)
+	rows, err = db.Query(`
+		SELECT p.id, p.name, p.category, SUM(oi.quantity) as qty, SUM(oi.quantity * p.price) as rev 
+		FROM order_items oi 
+		JOIN orders o ON oi.order_id = o.id 
+		JOIN products p ON oi.product_id = p.id 
+		WHERE o.status != 'cancelled' 
+		GROUP BY p.id, p.name, p.category 
+		ORDER BY qty DESC 
+		LIMIT 20
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var ti models.TopSellingItem
+		err := rows.Scan(&ti.ProductID, &ti.ProductName, &ti.Category, &ti.QuantitySold, &ti.TotalRevenue)
+		if err != nil {
+			return nil, err
+		}
+		report.TopItems = append(report.TopItems, ti)
+	}
+
+	return report, nil
+}
+
 // FetchOrdersByUserID retrieves all orders for a specific user
 func FetchOrdersByUserID(userID int) ([]models.Order, error) {
 	rows, err := db.Query(`SELECT id, user_id, total_price, status, created_at 

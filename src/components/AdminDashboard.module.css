@@ -16,6 +16,32 @@
   border-bottom: 2px solid #e9ecef;
 }
 
+.dashboard-nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+  background: #f5f5f5;
+}
+
+.nav-btn.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
 .dashboard-title {
   font-size: 2.5rem;
   color: #2c3e50;

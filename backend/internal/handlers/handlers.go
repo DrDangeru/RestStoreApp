@@ -240,6 +240,18 @@ func GetDashboardStats(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(stats)
 }
 
+// GetSalesReport handles GET /api/reports/sales
+func GetSalesReport(w http.ResponseWriter, r *http.Request) {
+	report, err := repository.GetSalesReport()
+	if err != nil {
+		http.Error(w, "Failed to fetch sales report", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(report)
+}
+
 // OrderSupplies handles POST /api/products/{id}/supply
 func OrderSupplies(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)

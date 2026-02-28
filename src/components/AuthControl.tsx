@@ -2,16 +2,8 @@ import { useState, useImperativeHandle, forwardRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AuthModal from './AuthModal';
 import UserProfile from './UserProfile';
+import type { AuthControlProps, AuthControlHandle } from '../types';
 import styles from './AuthControl.module.css';
-
-interface AuthControlProps {
-  onAdminClick: () => void;
-  hideButton?: boolean;
-}
-
-export interface AuthControlHandle {
-  openLogin: () => void;
-}
 
 const AuthControl = forwardRef<AuthControlHandle, AuthControlProps>(({ onAdminClick, hideButton = false }, ref) => {
   const { user } = useAuth();

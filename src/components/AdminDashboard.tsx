@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import type { DashboardStats } from '../types';
+import type { DashboardStats, AdminDashboardProps } from '../types';
+import { Reports } from './Reports';
 import styles from './AdminDashboard.module.css';
-
-interface AdminDashboardProps {
-  onClose: () => void;
-}
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -14,6 +11,8 @@ function AdminDashboard({ onClose }: AdminDashboardProps) {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<'dashboard' | 'reports'>
+  ('dashboard');
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -95,24 +94,44 @@ function AdminDashboard({ onClose }: AdminDashboardProps) {
   return (
     <div className={styles['dashboard-container']}>
       <header className={styles['dashboard-header']}>
-        <h1 className={styles['dashboard-title']}>Admin Dashboard</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+          <h1 className={styles['dashboard-title']}>Admin Dashboard</h1>
+          <nav className={styles['dashboard-nav']}>
+            <button 
+              className={`${styles['nav-btn']} ${activeView === 'dashboard' ? styles.active : ''}`}
+              onClick={() => setActiveView('dashboard')}
+            >
+              Inventory & Overview
+            </button>
+            <button 
+              className={`${styles['nav-btn']} ${activeView === 'reports' ? styles.active : ''}`}
+              onClick={() => setActiveView('reports')}
+            >
+              Detailed Reports
+            </button>
+          </nav>
+        </div>
         <button className={styles['close-btn']} onClick={onClose}>Close Panel</button>
       </header>
 
-      <div className={styles['stats-grid']}>
-        <div className={styles['stat-card']}>
-          <span className={styles['stat-label']}>Total Orders</span>
-          <span className={styles['stat-value']}>{stats.totalOrders}</span>
-        </div>
-        <div className={styles['stat-card']}>
-          <span className={styles['stat-label']}>Total Revenue</span>
-          <span className={styles['stat-value']}>${stats.totalRevenue.toFixed(2)}</span>
-        </div>
-        <div className={styles['stat-card']}>
-          <span className={styles['stat-label']}>Low Stock Items</span>
-          <span className={styles['stat-value']}>{stats.lowStockItems ? stats.lowStockItems.length : 0}</span>
-        </div>
-      </div>
+      {activeView === 'reports' ? (
+        <Reports />
+      ) : (
+        <>
+          <div className={styles['stats-grid']}>
+            <div className={styles['stat-card']}>
+              <span className={styles['stat-label']}>Total Orders</span>
+              <span className={styles['stat-value']}>{stats.totalOrders}</span>
+            </div>
+            <div className={styles['stat-card']}>
+              <span className={styles['stat-label']}>Total Revenue</span>
+              <span className={styles['stat-value']}>${stats.totalRevenue.toFixed(2)}</span>
+            </div>
+            <div className={styles['stat-card']}>
+              <span className={styles['stat-label']}>Low Stock Items</span>
+              <span className={styles['stat-value']}>{stats.lowStockItems ? stats.lowStockItems.length : 0}</span>
+            </div>
+          </div>
 
       <section className={styles['inventory-section']}>
         <h2 className={styles['section-title']}>📦 Full Inventory</h2>
@@ -269,6 +288,8 @@ function AdminDashboard({ onClose }: AdminDashboardProps) {
           <p>No sales data for the last 7 days.</p>
         )}
       </section>
+        </>
+      )}
     </div>
   );
 }

@@ -143,6 +143,35 @@ type DailyStat struct {
 	TotalRevenue float64 `json:"totalRevenue"`
 }
 
+// MonthlyStat represents sales statistics for a single month
+type MonthlyStat struct {
+	Month        string  `json:"month"`
+	TotalOrders  int     `json:"totalOrders"`
+	TotalRevenue float64 `json:"totalRevenue"`
+}
+
+// TopSellingItem represents an item and its total quantity sold
+type TopSellingItem struct {
+	ProductID    int     `json:"productId"`
+	ProductName  string  `json:"productName"`
+	Category     string  `json:"category"`
+	QuantitySold int     `json:"quantitySold"`
+	TotalRevenue float64 `json:"totalRevenue"`
+}
+
+// SalesReport represents the full sales report data
+type SalesReport struct {
+	DailySales   []DailyStat      `json:"dailySales"`
+	Revenue []MonthlyStat `json:"revenue"`
+	MonthlySales []MonthlyStat `json:"monthlySales"`
+	TopItems     []TopSellingItem `json:"topItems"`
+	TotalOrdersbyDay []DailyStat `json:"totalOrdersbyDay"`
+	TotalRevenuebyDay []DailyStat `json:"totalRevenuebyDay"`
+	TotalOrdersbyMonth []MonthlyStat `json:"totalOrdersbyMonth"`
+	TotalRevenuebyMonth []MonthlyStat `json:"totalRevenuebyMonth"`
+
+}
+
 // DashboardStats represents aggregated data for the dashboard
 type DashboardStats struct {
 	TotalOrders   int         `json:"totalOrders"`
@@ -150,4 +179,10 @@ type DashboardStats struct {
 	LowStockItems []Product   `json:"lowStockItems"`
 	Inventory     []Product   `json:"inventory"`
 	DailyStats    []DailyStat `json:"dailyStats"`
+}
+
+type SalesCharts struct {
+	pieChart []MonthlyStat `json:"pieChart"`
+	lineChart []MonthlyStat `json:"lineChart"`
+	barChart []MonthlyStat `json:"barChart"`
 }

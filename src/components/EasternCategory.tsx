@@ -1,28 +1,10 @@
 import { useState } from 'react'
-import type { 
-  Product, 
-  CartItem, 
-  CustomizationOption 
-} from '../types'
+import type { Product, CustomizationOption, CategoryProps } from '../types'
 import SpecialsBanner from './SpecialsBanner'
 import Cart from './Cart'
 import styles from '../App.module.css'
 
-interface EasternCategoryProps {
-  products: Product[]
-  cartItems: CartItem[]
-  onBackToHome: () => void
-  onAddToCart: (
-    product: Product, 
-    portion: string, 
-    customizations: CustomizationOption[]
-  ) => void
-  onUpdateQuantity: (index: number, change: number) => void
-  onRemoveItem: (index: number) => void
-  onCheckout: () => void
-}
-
-function EasternCategory({
+export default function EasternCategory({
   products,
   cartItems,
   onBackToHome,
@@ -30,7 +12,7 @@ function EasternCategory({
   onUpdateQuantity,
   onRemoveItem,
   onCheckout
-}: EasternCategoryProps) {
+}: CategoryProps) {
   const [selectedProduct, setSelectedProduct] = 
     useState<Product | null>(null)
   const [portionSize, setPortionSize] = useState<string>('Medium')
@@ -370,5 +352,3 @@ function EasternCategory({
     </div>
   )
 }
-
-export default EasternCategory

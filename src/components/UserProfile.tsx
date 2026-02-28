@@ -1,11 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import type { Order, OrderItem } from '../types';
+import type { Order, OrderItem, UserProfileProps } from '../types';
 import styles from './UserProfile.module.css';
-
-interface UserProfileProps {
-  onClose: () => void;
-}
 
 const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
   const { user, logout, token } = useAuth();
