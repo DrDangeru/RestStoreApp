@@ -88,6 +88,7 @@ func main() {
 	r.Use(loggingMiddleware)
 
 	// Public routes
+	r.HandleFunc("/api/promos", handlers.GetPromosSSE).Methods("GET")
 	r.HandleFunc("/api/products", handlers.GetProducts).Methods("GET")
 	r.HandleFunc("/api/products/category/{category}",
 		handlers.GetProductsByCategory).Methods("GET")
@@ -113,6 +114,8 @@ func main() {
 	adminRouter.Use(adminMiddleware)
 	adminRouter.HandleFunc("/dashboard", handlers.GetDashboardStats).Methods("GET")
 	adminRouter.HandleFunc("/reports/sales", handlers.GetSalesReport).Methods("GET")
+	adminRouter.HandleFunc("/promos/list", handlers.GetPromos).Methods("GET")
+	adminRouter.HandleFunc("/promos/list", handlers.UpdatePromos).Methods("PUT")
 	adminRouter.HandleFunc("/products", handlers.CreateProduct).Methods("POST")
 	adminRouter.HandleFunc("/products/{id}",
 		handlers.UpdateProduct).Methods("PUT")

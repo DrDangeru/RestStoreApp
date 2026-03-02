@@ -133,6 +133,13 @@ export interface CategoryProps {
     onCheckout: () => void;
 }
 
+export interface InfoBarProps {
+    message?: string;
+    backgroundColor?: string;
+    textColor?: string;
+    speed?: number;
+}
+
 export interface SpecialsBannerProps {
     message?: string;
     backgroundColor?: string;

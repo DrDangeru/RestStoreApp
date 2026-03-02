@@ -3,14 +3,95 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 
 	"restaurant-backend/internal/models"
 	"restaurant-backend/internal/repository"
 )
+
+var (
+	promos = []string{
+		"🎉 Weekend Special: 20% off all Eastern Eats! Use code EAST20",
+		"🍔 Burger Tuesday: Buy one get one free on all Western meals!",
+		"🍜 Free Kimchi with any Eastern order over $30",
+		"🍟 Friday Deal: Free large fries with any combo",
+		"🍰 Dessert Sunday: 50% off all sweet treats!",
+	}
+	promosLock sync.RWMutex
+)
+
+// GetPromosSSE handles GET /api/promos for Server-Sent Events
+func GetPromosSSE(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	// Make sure we allow CORS for this specific endpoint just in case
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	// Send initial promo immediately
+	promosLock.RLock()
+	if len(promos) > 0 {
+		fmt.Fprintf(w, "data: %s\n\n", promos[0])
+	}
+	promosLock.RUnlock()
+	flusher.Flush()
+
+	i := 1
+	for {
+		select {
+		case <-r.Context().Done():
+			return
+		case <-ticker.C:
+			promosLock.RLock()
+			if len(promos) > 0 {
+				fmt.Fprintf(w, "data: %s\n\n", promos[i%len(promos)])
+			}
+			promosLock.RUnlock()
+			flusher.Flush()
+			i++
+		}
+	}
+}
+
+// GetPromos handles GET /api/promos/list (for admin)
+func GetPromos(w http.ResponseWriter, r *http.Request) {
+	promosLock.RLock()
+	defer promosLock.RUnlock()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(promos)
+}
+
+// UpdatePromos handles PUT /api/promos/list (for admin)
+func UpdatePromos(w http.ResponseWriter, r *http.Request) {
+	var newPromos []string
+	if err := json.NewDecoder(r.Body).Decode(&newPromos); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	promosLock.Lock()
+	promos = newPromos
+	promosLock.Unlock()
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Promos updated successfully"})
+}
 
 // GetProducts handles GET /api/products
 func GetProducts(w http.ResponseWriter, r *http.Request) {

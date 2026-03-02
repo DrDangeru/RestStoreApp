@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import type { Product, CustomizationOption, CategoryProps } from '../types'
-import SpecialsBanner from './SpecialsBanner'
 import Cart from './Cart'
 import styles from '../App.module.css'
 
@@ -27,7 +26,6 @@ export default function EasternCategory({
       className={`${styles['category-page']} 
         ${styles['eastern-theme']}`}
     >
-      <SpecialsBanner />
       <header className={styles['category-header']}>
         <h1 className={styles['category-title']}>
           🥢 Eastern Eats

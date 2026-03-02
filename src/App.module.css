@@ -1,6 +1,7 @@
 /* Landing Page */
 .landing-page {
   min-height: 100vh;
+  padding-top: 50px; /* Space for the fixed info bar */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -116,7 +117,7 @@
 /* Category Pages */
 .category-page {
   min-height: 100vh;
-  padding: 2rem;
+  padding: 50px 2rem 2rem;
 }
 
 .category-header {

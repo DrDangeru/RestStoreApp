@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import type { DashboardStats, AdminDashboardProps } from '../types';
 import { Reports } from './Reports';
+import { InfoBarEditor } from './InfoBarEditor';
 import styles from './AdminDashboard.module.css';
 
 const API_URL = 'http://localhost:8080/api';
@@ -11,8 +12,7 @@ function AdminDashboard({ onClose }: AdminDashboardProps) {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<'dashboard' | 'reports'>
-  ('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'reports' | 'promos'>('dashboard');
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -109,6 +109,12 @@ function AdminDashboard({ onClose }: AdminDashboardProps) {
             >
               Detailed Reports
             </button>
+            <button 
+              className={`${styles['nav-btn']} ${activeView === 'promos' ? styles.active : ''}`}
+              onClick={() => setActiveView('promos')}
+            >
+              Manage Promos
+            </button>
           </nav>
         </div>
         <button className={styles['close-btn']} onClick={onClose}>Close Panel</button>
@@ -116,6 +122,8 @@ function AdminDashboard({ onClose }: AdminDashboardProps) {
 
       {activeView === 'reports' ? (
         <Reports />
+      ) : activeView === 'promos' ? (
+        <InfoBarEditor />
       ) : (
         <>
           <div className={styles['stats-grid']}>

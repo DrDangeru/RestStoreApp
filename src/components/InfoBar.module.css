@@ -1,0 +1,29 @@
+.info-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  font-style: italic;
+  background: linear-gradient(90deg, #ff4b2b 0%, #ff416c 100%);
+  padding: 12px 0;
+  overflow: hidden;
+  font-weight: bold;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  text-align: center;
+}
+
+.promo-text {
+  display: inline-block;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.fade-out {
+  opacity: 0;
+}
+
+.fade-in {
+  opacity: 1;
+}

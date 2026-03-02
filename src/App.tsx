@@ -4,7 +4,7 @@ import type { Product, ProductCategory, CartItem, CustomizationOption } from './
 import Feedback from './components/Feedback'
 import EasternCategory from './components/EasternCategory'
 import WesternCategory from './components/WesternCategory'
-import SpecialsBanner from './components/SpecialsBanner'
+import InfoBar from './components/InfoBar'
 import AdminDashboard from './components/AdminDashboard'
 import AuthControl from './components/AuthControl'
 import type { AuthControlHandle } from './types'
@@ -161,6 +161,7 @@ function App() {
 
   return (
     <>
+      <InfoBar />
       <AuthControl 
         ref={authControlRef}
         onAdminClick={() => setShowAdmin(true)}
@@ -169,7 +170,6 @@ function App() {
 
       {!selectedCategory ? (
         <div className={styles['landing-page']}>
-          <SpecialsBanner />
           <div className={styles['landing-content']}>
             <h1 className={styles['landing-title']}>What do you feel like eating?</h1>
             {loading && <p className={styles['loading-msg']}>Loading menu...</p>}
