@@ -23,9 +23,16 @@
   margin-bottom: 2rem;
 }
 
-.input {
+.inputWrapper {
   flex: 1;
-  padding: 0.75rem 1rem;
+  display: flex;
+  position: relative;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem 3rem 0.75rem 1rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;
@@ -35,6 +42,37 @@
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.emojiContainer {
+  position: absolute;
+  right: 0.5rem;
+}
+
+.emojiToggleBtn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+
+.emojiToggleBtn:hover {
+  transform: scale(1.1);
+}
+
+.emojiPickerWrapper {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  z-index: 1000;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border-radius: 8px;
 }
 
 .addBtn {

@@ -140,13 +140,6 @@ export interface InfoBarProps {
     speed?: number;
 }
 
-export interface SpecialsBannerProps {
-    message?: string;
-    backgroundColor?: string;
-    textColor?: string;
-    speed?: number;
-}
-
 export interface UserProfileProps {
     onClose: () => void;
 }
