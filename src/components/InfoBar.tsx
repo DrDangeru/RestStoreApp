@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { InfoBarProps } from '../types';
+import { env } from '../env';
 import styles from './InfoBar.module.css';
 
 const DEFAULT_CONFIG = {
@@ -17,7 +18,7 @@ const InfoBar: React.FC<InfoBarProps> = ({
   const [fade, setFade] = useState(false);
 
   useEffect(() => {
-    const eventSource = new EventSource('http://localhost:8080/api/promos');
+    const eventSource = new EventSource(`${env.REACT_APP_API_URL}/promos`);
 
     eventSource.onmessage = (event) => {
       // Fade out

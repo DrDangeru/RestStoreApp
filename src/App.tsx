@@ -8,9 +8,10 @@ import InfoBar from './components/InfoBar'
 import AdminDashboard from './components/AdminDashboard'
 import AuthControl from './components/AuthControl'
 import type { AuthControlHandle } from './types'
+import { env } from './env'
 import styles from './App.module.css'
 
-const API_URL = 'http://localhost:8080/api'
+const API_URL = env.REACT_APP_API_URL
 
 function App() {
   const { user, token } = useAuth()

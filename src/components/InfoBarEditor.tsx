@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import EmojiPicker from 'emoji-picker-react';
 import type { EmojiClickData } from 'emoji-picker-react';
+import { env } from '../env';
 import styles from './InfoBarEditor.module.css';
 
-const API_URL = 'http://localhost:8080/api';
+const API_URL = env.REACT_APP_API_URL;
 
 export const InfoBarEditor: React.FC = () => {
   const { token } = useAuth();

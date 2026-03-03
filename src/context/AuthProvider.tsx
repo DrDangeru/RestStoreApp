@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AuthContext } from './AuthContext';
 import type { User, LoginRequest, RegisterRequest, AuthResponse } from '../types';
+import { env } from '../env';
 
-const API_URL = 'http://localhost:8080/api/auth';
+const API_URL = `${env.REACT_APP_API_URL}/auth`;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [isLoading, setIsLoading] = useState(true);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
-  };
+  }, []);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -33,15 +34,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             logout();
           }
         } catch (error) {
-          console.error("Auth initialization failed:", error);
+          console.error("Failed to init auth:", error);
           logout();
+        } finally {
+          setIsLoading(false);
         }
+      } else {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     initAuth();
-  }, []);
+  }, [logout]);
 
   const login = async (data: LoginRequest) => {
     const response = await fetch(`${API_URL}/login`, {

@@ -1,30 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import type { SalesReport } from '../types';
+import { ChartView } from './ChartView';
+import { env } from '../env';
 import styles from './Reports.module.css';
+
+const API_URL = env.REACT_APP_API_URL;// use env var
 
 export const Reports: React.FC = () => {
   const [report, setReport] = useState<SalesReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'daily' | 'monthly' | 'topItems'>('daily');
+  const [viewType, setViewType] = useState<'daily' | 'monthly'>('daily');
 
   const fetchReport = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/reports/sales', {
+      const response = await fetch(`${API_URL}/reports/sales`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch reports');
+        throw new Error('Failed to fetch sales report');
       }
 
       const data = await response.json();
       setReport(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
       setLoading(false);
     }
@@ -39,116 +43,85 @@ export const Reports: React.FC = () => {
   if (!report) return null;
 
   return (
-    <div className={styles.reportsContainer}>
-      <h2 className={styles.title}>Sales & Performance Reports</h2>
-
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${activeTab === 'daily' ? styles.active : ''}`}
-          onClick={() => setActiveTab('daily')}
-        >
-          Daily Sales (Last 30 Days)
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'monthly' ? styles.active : ''}`}
-          onClick={() => setActiveTab('monthly')}
-        >
-          Monthly Sales (Last 12 Months)
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'topItems' ? styles.active : ''}`}
-          onClick={() => setActiveTab('topItems')}
-        >
-          Top Selling Items
-        </button>
+    <div className={styles['reports-container']}>
+      <div className={styles['reports-header']}>
+        <h2>Sales Analytics</h2>
+        <div className={styles['view-toggles']}>
+          <button 
+            className={`${styles['toggle-btn']} ${viewType === 'daily' ? styles.active : ''}`}
+            onClick={() => setViewType('daily')}
+          >
+            Daily View
+          </button>
+          <button 
+            className={`${styles['toggle-btn']} ${viewType === 'monthly' ? styles.active : ''}`}
+            onClick={() => setViewType('monthly')}
+          >
+            Monthly View
+          </button>
+        </div>
       </div>
 
-      <div className={styles.content}>
-        {activeTab === 'daily' && (
-          <div className={styles.tableWrapper}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Total Orders</th>
-                  <th>Revenue</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.dailySales?.map((stat) => (
-                  <tr key={stat.date}>
-                    <td>{new Date(stat.date).toLocaleDateString()}</td>
-                    <td>{stat.totalOrders}</td>
-                    <td>${stat.totalRevenue.toFixed(2)}</td>
-                  </tr>
-                ))}
-                {!report.dailySales?.length && (
-                  <tr>
-                    <td colSpan={3} className={styles.empty}>No daily sales data available</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+      <div className={styles['charts-grid']}>
+        {viewType === 'daily' ? (
+          <>
+            <ChartView 
+              data={report.dailySales || []}
+              type="bar"
+              title="Daily Revenue"
+              dataKey="totalRevenue"
+              timeKey="date"
+            />
+            <ChartView 
+              data={report.dailySales || []}
+              type="pie"
+              title="Daily Orders Breakdown"
+              dataKey="totalOrders"
+              timeKey="date"
+            />
+          </>
+        ) : (
+          <>
+            <ChartView 
+              data={report.monthlySales || []}
+              type="bar"
+              title="Monthly Revenue"
+              dataKey="totalRevenue"
+              timeKey="month"
+            />
+            <ChartView 
+              data={report.monthlySales || []}
+              type="pie"
+              title="Monthly Orders Breakdown"
+              dataKey="totalOrders"
+              timeKey="month"
+            />
+          </>
         )}
+      </div>
 
-        {activeTab === 'monthly' && (
-          <div className={styles.tableWrapper}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Month</th>
-                  <th>Total Orders</th>
-                  <th>Revenue</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.monthlySales?.map((stat) => (
-                  <tr key={stat.month}>
-                    <td>{stat.month}</td>
-                    <td>{stat.totalOrders}</td>
-                    <td>${stat.totalRevenue.toFixed(2)}</td>
-                  </tr>
-                ))}
-                {!report.monthlySales?.length && (
-                  <tr>
-                    <td colSpan={3} className={styles.empty}>No monthly sales data available</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {activeTab === 'topItems' && (
-          <div className={styles.tableWrapper}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Item Name</th>
-                  <th>Category</th>
-                  <th>Quantity Sold</th>
-                  <th>Total Revenue</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.topItems?.map((item) => (
-                  <tr key={item.productId}>
-                    <td>{item.productName}</td>
-                    <td className={styles.capitalize}>{item.category}</td>
-                    <td>{item.quantitySold}</td>
-                    <td>${item.totalRevenue.toFixed(2)}</td>
-                  </tr>
-                ))}
-                {!report.topItems?.length && (
-                  <tr>
-                    <td colSpan={4} className={styles.empty}>No item sales data available</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+      <div className={styles['top-items-section']}>
+        <h3>Top Selling Items</h3>
+        <div className={styles['items-grid']}>
+          {report.topItems?.map(item => (
+            <div key={item.productId} className={styles['top-item-card']}>
+              <div className={styles['item-info']}>
+                <span className={styles['item-name']}>{item.productName}</span>
+                <span className={styles['item-category']}>{item.category}</span>
+              </div>
+              <div className={styles['item-stats']}>
+                <div className={styles['stat']}>
+                  <span className={styles['stat-label']}>Sold</span>
+                  <span className={styles['stat-value']}>{item.quantitySold}</span>
+                </div>
+                <div className={styles['stat']}>
+                  <span className={styles['stat-label']}>Revenue</span>
+                  <span className={styles['stat-value']}>${item.totalRevenue.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import type { Order, OrderItem, UserProfileProps } from '../types';
+import { env } from '../env';
 import styles from './UserProfile.module.css';
 
 const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
@@ -11,7 +12,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/api/orders/user/${user!.id}`, {
+        const response = await fetch(`${env.REACT_APP_API_URL}/orders/user/${user!.id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

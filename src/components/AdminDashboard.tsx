@@ -3,9 +3,10 @@ import { useAuth } from '../context/AuthContext';
 import type { DashboardStats, AdminDashboardProps } from '../types';
 import { Reports } from './Reports';
 import { InfoBarEditor } from './InfoBarEditor';
+import { env } from '../env';
 import styles from './AdminDashboard.module.css';
 
-const API_URL = 'http://localhost:8080/api';
+const API_URL = env.REACT_APP_API_URL;
 
 function AdminDashboard({ onClose }: AdminDashboardProps) {
   const { token } = useAuth();
